@@ -83,7 +83,7 @@ codiv-bulk token                    # solve one Turnstile token (debug)
 - Mint cost ≈ **80-115 s per account** (one Turnstile solve + one verification mail).
 - A 65-key batch per worker sustained **~55 successful mints**; the failure mode is the **420 s** per-mint timeout, not a partial write.
 - Turnstile tokens are pinned to the solving exit; Cloudflare rejects a share of fresh tokens with `VERIFICATION_FAILED`, and the mint retries with a brand-new solve (up to 4 attempts).
-- A datacenter exit passes the widget but the challenge answers `fail` after the click — point `--proxy` at a residential-ish exit.
+- A datacenter exit passes the widget but the challenge answers `fail code 600010` after the click — point `--proxy` at a residential-ish exit, and expect a given exit to flip within hours after heavy use.
 
 ## 🔌 Connect to 9Router
 
