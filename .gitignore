@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Output files
+*.txt
+*.jsonl
+!examples/*.js
+
+# Auth data (never commit)
+.codiv-auth.json
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Account data
+out/
+codiv-accounts/

@@ -1,0 +1,27 @@
+{
+  "name": "codiv-bulk-apikey",
+  "version": "1.0.0",
+  "description": "Bulk-create codiv.ai accounts + API keys (100M free tokens each) — 9Router connector",
+  "main": "src/cli.js",
+  "bin": {
+    "codiv-bulk": "src/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "9router",
+    "codiv",
+    "api-keys",
+    "bulk",
+    "openai-compatible"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/F0Rextasy/codiv-bulk-apikey"
+  },
+  "scripts": {
+    "test": "node src/cli.js --help"
+  }
+}
