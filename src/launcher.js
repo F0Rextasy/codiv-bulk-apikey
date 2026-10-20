@@ -3,17 +3,17 @@
 /**
  * CODIV banner launcher.
  *
- * The wordmark below is byte-identical to the fenced banner at the top of
- * README.md (and every i18n/README.<lang>.md) — keep the two in sync.
+ * The wordmark is the fenced banner at the top of README.md (and every
+ * i18n/README.<lang>.md) — keep the two in sync; `boxedBanner` pads the rows.
  */
 
 const WORDMARK = [
-  ' ██████╗    ██████╗   ██████╗      ███╗     ██      ██',
-  '██╔════╝   ██╔════╝   ██╔══██╗    █████╗    ██      ██',
-  '█████╗     ███████╗   ██║  ██║    ██╔██║    ██      ██',
-  '██╔══╝     ██╔══██║   ██║  ██║    ██║╚██║    █      █ ',
-  '███████╗   ██║  ██║   ██████╔╝    ██████║     █    █  ',
-  '╚══════╝   ╚═╝  ╚═╝   ╚═════╝     ╚═════╝      ████   ',
+  ' ██████╗  ██████╗  ██████╗  ██╗ ██╗   ██╗',
+  '██╔════╝ ██╔═══██╗ ██╔══██╗ ██║ ██║   ██║',
+  '██║      ██║   ██║ ██║  ██║ ██║ ██║   ██║',
+  '██║      ██║   ██║ ██║  ██║ ██║ ╚██╗ ██╔╝',
+  '╚██████╗ ╚██████╔╝ ██████╔╝ ██║  ╚████╔╝',
+  ' ╚═════╝  ╚═════╝  ╚═════╝  ╚═╝   ╚═══╝',
 ];
 
 const WIDTH = Math.max(...WORDMARK.map((r) => r.length));
@@ -34,17 +34,11 @@ function boxedBanner() {
   ].join('\n');
 }
 
-const BANNER = WORDMARK.join('\n');
-
 function showBanner() {
   console.log(boxedBanner());
 }
 
-function showCompact() {
-  console.log('  C O D I V   b u l k - a p i k e y');
-}
-
-module.exports = { showBanner, showCompact, BANNER, WORDMARK, boxedBanner };
+module.exports = { showBanner, WORDMARK, boxedBanner };
 
 if (require.main === module) {
   showBanner();

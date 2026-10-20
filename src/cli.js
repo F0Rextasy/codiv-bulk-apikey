@@ -31,6 +31,12 @@ const arg = (n, d) => {
   return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : d;
 };
 const flag = (n) => process.argv.includes(`--${n}`);
+
+/** Numeric flag: anything that is not a finite number falls back to `d`. */
+const num = (n, d, min = 0) => {
+  const v = Number(arg(n, d));
+  return Number.isFinite(v) ? Math.max(min, v) : d;
+};
 const mask = (s) => (s ? `${String(s).slice(0, 8)}…${String(s).slice(-4)}` : '(none)');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -67,12 +73,15 @@ async function cmdCreate() {
   const dir = path.join(OUT_DIR, arg('dir', path.basename(DEFAULT_DIR)));
   const passthrough = ['--cdp', '--mailtrap-token', '--solver-cmd', '--folder', '--proxy']
     .filter((f) => process.argv.includes(f))
-    .flatMap((f) => [f, process.argv[process.argv.indexOf(f) + 1]]);
+    .flatMap((f) => {
+      const v = process.argv[process.argv.indexOf(f) + 1];
+      return v && !v.startsWith('--') ? [f, v] : [];
+    });
   const { start, won, total } = await runBatch({
-    count: Number(arg('count', '200')),
+    count: num('count', '200'),
     dir,
     keys: keysFile,
-    pause: Number(arg('pause', '5000')),
+    pause: num('pause', '5000'),
     passthrough,
     log_line: logLine,
   });
@@ -83,7 +92,7 @@ async function cmdCreate() {
 async function cmdVerify() {
   const keysFile = arg('keys', DEFAULT_KEYS);
   const model = arg('model', 'diffusiongemma-26b');
-  const conc = Number(arg('conc', '6'));
+  const conc = num('conc', '6', 1);
   const keys = readKeys(keysFile);
   console.log(`Verifying ${keys.length} keys with ${model}…\n`);
   let ok = 0;
@@ -135,7 +144,7 @@ async function cmdToken() {
     cdpUrl: arg('cdp', DEFAULT_CDP),
     url: arg('url', 'https://codiv.ai/signup'),
     proxy: arg('proxy', null),
-    attempts: Number(arg('attempts', '2')),
+    attempts: num('attempts', '2', 1),
     log: (m) => console.log(m),
   });
   if (!token) {

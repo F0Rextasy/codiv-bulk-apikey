@@ -204,6 +204,11 @@ async function mintAccount({
   record.steps.signup = { status: signUp.status, userId: signUp.json?.user?.id, emailVerified: signUp.json?.user?.emailVerified };
   if (signUp.status !== 200 || !signUp.json?.user) throw new Error(`sign-up ${signUp.status}: ${JSON.stringify(signUp.json || signUp.text).slice(0, 200)}`);
   log(`signup      -> 200 user ${signUp.json.user.id} verified=${signUp.json.user.emailVerified}`);
+  // Save the account before the key steps: a failure later (mail timeout,
+  // action-id scan, createKey) would otherwise throw away the only copy of
+  // the password and orphan an account that already exists on codiv.ai.
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, JSON.stringify({ ...record, account: { email: box.address, password } }, null, 2));
 
   log('verification-> waiting for mail');
   let link = null;

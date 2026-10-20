@@ -25,6 +25,7 @@ async function login(base, password) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'User-Agent': UA },
     body: JSON.stringify({ password: password ?? '123456' }),
+    signal: AbortSignal.timeout(15000),
   });
   const sc = typeof res.headers.getSetCookie === 'function' ? res.headers.getSetCookie() : [];
   const cookie = sc.map((c) => c.split(';')[0]).join('; ');
@@ -40,6 +41,7 @@ async function apiCall(base, cookie, pathname, init = {}) {
       ...(cookie ? { Cookie: cookie } : {}),
       ...(init.headers || {}),
     },
+    signal: AbortSignal.timeout(15000),
   });
   const text = await res.text();
   let json = null;
@@ -151,6 +153,7 @@ async function connectBulk({
 async function listRouterModels(base, clientKey, { filter = 'codiv/' } = {}) {
   const res = await fetch(`${base}/v1/models`, {
     headers: { Authorization: `Bearer ${clientKey}`, 'User-Agent': UA },
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) throw new Error(`router /v1/models -> ${res.status}`);
   const data = await res.json();

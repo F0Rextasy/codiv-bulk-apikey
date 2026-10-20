@@ -77,7 +77,7 @@ async function runBatch({
     const record = (() => {
       try { return JSON.parse(fs.readFileSync(dest, 'utf8')); } catch { return null; }
     })();
-    const proven = record?.steps?.proof?.chat?.status === 200 || /chat\s*→?\s*200|200.*pong|"pong"/i.test(out);
+    const proven = record?.steps?.proof?.chat?.status === 200;
     const seconds = ((Date.now() - t0) / 1000).toFixed(0);
 
     if (key && proven) {
