@@ -132,6 +132,35 @@ curl http://localhost:20128/v1/chat/completions \
   -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
 ```
 
+
+## 🔌 Hubungkan ke OmniRoute
+
+OmniRoute adalah router kompatibel-OpenAI yang di-host sendiri:
+
+```bash
+npm install -g omniroute && omniroute        # dashboard on http://localhost:20128
+```
+
+Daftarkan semua key Anda dengan satu perintah (membuat provider-node `codiv` dan melampirkan setiap key):
+
+```bash
+node src/cli.js connect --keys out/codiv-keys.txt
+```
+
+```
+Endpoint : http://localhost:20128/v1
+API key  : sk-<omniroute client key>       (a `codiv` client key is created if missing)
+Models   : codiv/diffusiongemma-26b
+```
+
+Panggil seperti endpoint OpenAI mana pun:
+
+```bash
+curl http://localhost:20128/v1/chat/completions \
+  -H "Authorization: Bearer sk-<omniroute key>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
+```
 ## 🧠 Model yang tersedia
 
 | Model | Panggil sebagai di 9Router | Status |

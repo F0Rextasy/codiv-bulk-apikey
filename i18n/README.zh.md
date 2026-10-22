@@ -132,6 +132,35 @@ curl http://localhost:20128/v1/chat/completions \
   -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
 ```
 
+
+## 🔌 连接到 OmniRoute
+
+OmniRoute 是一个自托管的、兼容 OpenAI 的路由器：
+
+```bash
+npm install -g omniroute && omniroute        # dashboard on http://localhost:20128
+```
+
+用一条命令注册你所有的密钥（创建 `codiv` provider-node 并挂载每个密钥）：
+
+```bash
+node src/cli.js connect --keys out/codiv-keys.txt
+```
+
+```
+Endpoint : http://localhost:20128/v1
+API key  : sk-<omniroute client key>       (a `codiv` client key is created if missing)
+Models   : codiv/diffusiongemma-26b
+```
+
+像调用任何 OpenAI 端点一样调用它：
+
+```bash
+curl http://localhost:20128/v1/chat/completions \
+  -H "Authorization: Bearer sk-<omniroute key>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
+```
 ## 🧠 可用模型
 
 | 模型 | 在 9Router 中调用 | 状态 |

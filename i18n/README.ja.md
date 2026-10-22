@@ -132,6 +132,35 @@ curl http://localhost:20128/v1/chat/completions \
   -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
 ```
 
+
+## 🔌 OmniRoute に接続
+
+OmniRoute はセルフホスト型の OpenAI 互換ルーターです。
+
+```bash
+npm install -g omniroute && omniroute        # dashboard on http://localhost:20128
+```
+
+すべてのキーをコマンド 1 つで登録します（`codiv` プロバイダーノードを作成し、各キーを接続します）。
+
+```bash
+node src/cli.js connect --keys out/codiv-keys.txt
+```
+
+```
+Endpoint : http://localhost:20128/v1
+API key  : sk-<omniroute client key>       (a `codiv` client key is created if missing)
+Models   : codiv/diffusiongemma-26b
+```
+
+通常の OpenAI エンドポイントと同じように呼び出します。
+
+```bash
+curl http://localhost:20128/v1/chat/completions \
+  -H "Authorization: Bearer sk-<omniroute key>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
+```
 ## 🧠 利用可能なモデル
 
 | モデル | 9Router での呼び出し名 | ステータス |

@@ -18,6 +18,7 @@
 [![License](https://img.shields.io/badge/license-MIT-6ea8fe?style=for-the-badge)](LICENSE)
 [![Models](https://img.shields.io/badge/models-1%20served-412991?style=for-the-badge)](https://codiv.ai)
 [![9Router](https://img.shields.io/badge/9Router-connector-8B5CF6?style=for-the-badge)](#-connect-to-9router)
+[![OmniRoute](https://img.shields.io/badge/OmniRoute-connector-8B5CF6?style=for-the-badge)](#-connect-to-omniroute)
 [![X](https://img.shields.io/badge/X-%40bigbullapp-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/bigbullapp)
 
 [🛠 Quick start](#-quick-start) · [🎁 Free tier](#-free-tier--how-much-you-get) · [🤖 Models](#-models--all-1-of-them) · [🧪 Use the API](#-how-to-use-the-api) · [✅ Verified](#-verified-working--every-key-is-tested) · [🧭 How it works](#-how-it-works) · [🔌 9Router](#-connect-to-9router) · [⚙️ Options](#️-cli-options) · [🛰️ Proxies](#️-behind-a-proxy) · [🐞 Issues](#-issues)
@@ -205,6 +206,22 @@ Models   : codiv/diffusiongemma-26b
 
 Flags: `--router http://localhost:20128`, `--router-password 123456`, `--keys out/codiv-keys.txt`, `--model diffusiongemma-26b`. The node itself is created with prefix `codiv` and base URL `https://api.codiv.ai/v1`. Models are then served as `codiv/<model id>` and load-balanced across every key.
 
+
+## 🔌 Connect to OmniRoute
+
+[OmniRoute](https://omniroute.online) is a self-hosted, OpenAI-compatible router (`npm install -g omniroute && omniroute`, dashboard on `http://localhost:20128`). Register every key in one pass:
+
+```bash
+node src/cli.js connect --keys out/codiv-keys.txt
+```
+
+```
+Endpoint : http://localhost:20128/v1
+API key  : sk-<omniroute client key>       (a `codiv` client key is created if missing)
+Models   : codiv/diffusiongemma-26b
+```
+
+Flags: `--router http://localhost:20128`, `--router-password 123456`, `--keys out/codiv-keys.txt`, `--model diffusiongemma-26b`. The node itself is created with prefix `codiv` and base URL `https://api.codiv.ai/v1`. Models are then served as `codiv/<model id>` and load-balanced across every key.
 ## 🔑 What one key gets you
 
 | | |

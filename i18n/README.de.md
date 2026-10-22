@@ -132,6 +132,35 @@ curl http://localhost:20128/v1/chat/completions \
   -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
 ```
 
+
+## 🔌 Mit OmniRoute verbinden
+
+OmniRoute ist ein selbst gehosteter, OpenAI-kompatibler Router:
+
+```bash
+npm install -g omniroute && omniroute        # dashboard on http://localhost:20128
+```
+
+Registriere alle deine Keys mit einem einzigen Befehl (erzeugt den Provider-Node `codiv` und hängt jeden Key an):
+
+```bash
+node src/cli.js connect --keys out/codiv-keys.txt
+```
+
+```
+Endpoint : http://localhost:20128/v1
+API key  : sk-<omniroute client key>       (a `codiv` client key is created if missing)
+Models   : codiv/diffusiongemma-26b
+```
+
+Rufe ihn wie jeden OpenAI-Endpunkt auf:
+
+```bash
+curl http://localhost:20128/v1/chat/completions \
+  -H "Authorization: Bearer sk-<omniroute key>" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"codiv/diffusiongemma-26b","messages":[{"role":"user","content":"hi"}]}'
+```
 ## 🧠 Verfügbare Modelle
 
 | Modell | Aufruf in 9Router | Status |
