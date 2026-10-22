@@ -25,6 +25,12 @@
 
 </div>
 
+<div align="center">
+
+**English** · [Türkçe](README.tr.md) · [中文](README.cn.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Русский](README.ru.md) · [Português](README.pt.md)
+
+</div>
+
 ---
 
 ## 🎁 Free tier — how much you get
@@ -110,6 +116,11 @@ node src/cli.js connect                 # register the keys into 9Router
 `node src/cli.js` prints the CODIV banner and the task list. The tasks are `mint` (one account, on demand), `create` (campaign), `verify`, `connect`, `list` and `token` (solve a single Turnstile token for debugging). Flags are read with `--name value`, so nothing is hidden behind a config file.
 
 ## ✅ Verified working — every key is tested
+
+> **Quality gates.** Every key here passed a live `chat-200` before it was written to `keys.txt`
+> (dead keys are never shipped). Router combos follow the same rule at the model level: an entry is
+> added **only if the model answers `chat-200` and can call tools** — a model without tool support,
+> a dead key or a dead provider is dropped instead of added. Works with **9Router and OmniRoute**.
 
 | Check | Result |
 | --- | --- |
@@ -205,7 +216,6 @@ Models   : codiv/diffusiongemma-26b
 ```
 
 Flags: `--router http://localhost:20128`, `--router-password 123456`, `--keys out/codiv-keys.txt`, `--model diffusiongemma-26b`. The node itself is created with prefix `codiv` and base URL `https://api.codiv.ai/v1`. Models are then served as `codiv/<model id>` and load-balanced across every key.
-
 
 ## 🔌 Connect to OmniRoute
 
