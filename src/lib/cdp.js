@@ -197,6 +197,11 @@ class CDP extends EventEmitter {
     this.ws.on('message', (raw) => this._onMessage(raw));
     this.ws.on('close', () => this.emit('disconnect'));
     this.ws.on('error', (e) => this.emit('error', e));
+    // A dying browser emits 'error' from the socket; with no listener Node
+    // throws it unhandled and kills the run after its results are on disk.
+    // `on` is CDP's own message-listener API, so consumers attach real
+    // handling with addListener; this default keeps everyone else alive.
+    if (this.listenerCount('error') === 0) this.addListener('error', () => {});
     await this.ws.connect();
     return this;
   }

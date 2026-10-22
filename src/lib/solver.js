@@ -64,7 +64,6 @@ async function mountPage(cdp, url, proxy = null) {
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank', ...(ctx ? { browserContextId: ctx.browserContextId } : {}) }, null);
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true }, null);
   await cdp.send('Page.enable', {}, sessionId).catch(() => null);
-  await cdp.send('Runtime.enable', {}, sessionId).catch(() => null);
   const loaded = cdp.waitFor('Page.loadEventFired', { timeoutMs: 45000, sessionId }).catch(() => null);
   await cdp.send('Page.navigate', { url }, sessionId);
   // A widget in a hidden tab behaves differently (the challenge may never start),
