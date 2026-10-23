@@ -42,7 +42,7 @@
 | Franquia | **100.000.000 de tokens de entrada gratuitos** por conta |
 | Cartão exigido | **Não** |
 | Cadastro | e-mail + senha via `POST /api/auth/sign-up/email` (better-auth), link de e-mail verificado a partir de uma caixa de entrada Mailtrap |
-| Captcha | Cloudflare **Turnstile** no cadastro — resolvido no **seu próprio Chrome com interface gráfica** via CDP, ou por um solucionador externo que você já tenha |
+| Captcha | Cloudflare **Turnstile** no cadastro — resolvido no **seu próprio Chrome com interface** via CDP, ou por um solucionador externo que você já tenha |
 | Formato da chave | `sk-codiv-…` |
 | A unidade que escala | **uma conta = uma chave** → `--count N` na verdade significa "N contas gratuitas" |
 
@@ -66,7 +66,7 @@ node src/cli.js --verify-only     # every key in keys.txt is re-tested with a re
 | --- | --- | --- |
 | `diffusiongemma-26b` | `codiv/diffusiongemma-26b` | ✅ `200` — o modelo contra o qual cada criação é comprovada |
 
-A chave é criada a partir da própria server action do painel e os 100M de tokens de entrada gratuitos da conta a custeiam, então `diffusiongemma-26b` é o padrão tanto para `verify` quanto para `connect`; `--model <id>` fixa outro. Atualize a lista do lado do roteador com:
+A chave é criada a partir da própria server action do painel e os 100M de tokens de entrada gratuitos da conta a pagam, então `diffusiongemma-26b` é o padrão tanto para `verify` quanto para `connect`; `--model <id>` fixa outro. Atualize a lista do lado do roteador com:
 
 ```bash
 curl http://localhost:20128/v1/models -H "Authorization: Bearer sk-<9router key>"
@@ -89,6 +89,17 @@ client = OpenAI(base_url="https://api.codiv.ai/v1", api_key="sk-codiv-…")
 print(client.chat.completions.create(model="diffusiongemma-26b",
       messages=[{"role": "user", "content": "hi"}]).choices[0].message.content)
 ```
+
+## ⚡ Um comando
+
+```bash
+node src/cli.js --count N      # mint N accounts + keys — the captcha is solved automatically
+node src/cli.js --dry          # print the resolved plan: writes nothing, sends nothing
+```
+
+`--auto` é o padrão: o `src/solver.js` embutido monta o próprio widget Turnstile da codiv.ai no Chrome que você controla (`--cdp`, ou inicie-o com `--remote-debugging-port=9222`) e devolve o token — um comando, nada mais para executar. `--no-auto` desliga a resolução embutida; as saídas de emergência avançadas são para operadores que já possuem um solucionador e estão documentadas em `ADVANCED.md`.
+
+> ⚠️ **Termos e risco de conta.** Automatizar um provedor pode violar seus Termos de Serviço e levar ao banimento de contas ou IPs. Você executa isto em contas que possui, na sua própria máquina, por sua conta e risco; a ferramenta apenas opera a própria página de cadastro do site e nunca contorna um gate pago. Leia os ToS do provedor antes de uma campanha grande.
 
 ## 🛠 Início rápido
 
@@ -114,20 +125,20 @@ node src/cli.js connect                 # register the keys into 9Router
 
 ### 🖱️ O launcher
 
-`node src/cli.js` imprime o banner CODIV e a lista de tarefas. As tarefas são `mint` (uma conta, sob demanda), `create` (campanha), `verify`, `connect`, `list` e `token` (resolver um único token Turnstile para depuração). As flags são lidas com `--name value`, então nada fica escondido atrás de um arquivo de configuração.
+`npm start` (ou `node src/launcher.js`) abre o menu; o item **1) Mint keys** faz uma pergunta — quantas chaves — e executa a campanha com o captcha resolvido automaticamente (`--auto`). Nenhuma pergunta sobre token, captcha ou proxy: `proxies.txt` ao lado do CLI é usado automaticamente quando existe, caso contrário a ferramenta vai direto. `node src/cli.js` imprime o banner CODIV e a lista de tarefas por trás dele — `mint` (uma conta, sob demanda), `create` (campanha), `verify`, `connect`, `list` e `token` (resolve um único token Turnstile para depuração). As flags são lidas com `--name value`, então nada fica escondido atrás de um arquivo de configuração.
 
 ## ✅ Verificado e funcionando — toda chave é testada
 
-> **Portões de qualidade.** Toda chave aqui passou por um `chat-200` ao vivo antes de ser gravada em `keys.txt`
+> **Gates de qualidade.** Toda chave aqui passou por um `chat-200` ao vivo antes de ser gravada em `keys.txt`
 > (chaves mortas nunca são entregues). As combinações do roteador seguem a mesma regra no nível do modelo: uma entrada é
-> adicionada **somente se o modelo responder `chat-200` e puder chamar ferramentas** — um modelo sem suporte a ferramentas,
+> adicionada **somente se o modelo responder `chat-200` e conseguir chamar ferramentas** — um modelo sem suporte a ferramentas,
 > uma chave morta ou um provedor morto é descartado em vez de adicionado. Funciona com **9Router e OmniRoute**.
 
 | Verificação | Resultado |
 | --- | --- |
 | criação de conta | `POST /api/auth/sign-up/email` (better-auth) em uma caixa de entrada Mailtrap nova |
 | verificação de e-mail | o link de verificação é obtido da caixa de entrada; o better-auth faz login automático ao acessar a verificação, então seu `Set-Cookie` é a sessão |
-| criação de chave | a server action `createKey` do Next.js do painel (os ids são redescobertos a partir dos chunks implantados a cada execução, porque reimplantações os rotacionam) retorna a nova chave em sua resposta RSC |
+| criação de chave | a server action `createKey` do Next.js do painel (os ids são redescobertos a partir dos chunks implantados a cada execução, porque os redeploys os rotacionam) retorna a nova chave em sua resposta RSC |
 | prova ao vivo | `POST https://api.codiv.ai/v1/chat/completions` (`diffusiongemma-26b`) deve responder `200` antes de a chave contar |
 | uma chave que falha na verificação de chat | nunca é gravada — a conta permanece recuperável em seu JSON por slot |
 
@@ -144,9 +155,9 @@ inbox (one address per account)                                  a fresh address
    └─▶ live proof: POST https://api.codiv.ai/v1/chat/completions → real content = the key is live
 ```
 
-| Etapa | Chamada | Observações |
+| Etapa | Chamada | Notas |
 | --- | --- | --- |
-| caixa de entrada | API pública do Mailtrap | uma caixa de entrada nova por conta |
+| caixa de entrada | API pública do Mailtrap | uma caixa de entrada de recebimento nova por conta |
 | Turnstile | o próprio widget do site (sitekey `0x4AAAAAAE7hE0DIArlj6rXX`) montado no seu Chrome e clicado via CDP | o token volta como o cabeçalho `x-captcha-response` |
 | cadastro | `POST /api/auth/sign-up/email` | better-auth |
 | verificação | link de verificação da caixa de entrada | o `Set-Cookie` nesse acesso é a sessão |
@@ -173,10 +184,12 @@ node src/cli.js token                    # solve one Turnstile token (debug)
 | `--cdp <url>` | endpoint do Chrome DevTools | `http://127.0.0.1:9222` |
 | `--proxy <url>` | saída da página de resolução (`socks5://` / `http://`) | direto |
 | `--solver-cmd <cmd>` | solucionador Turnstile externo | — |
-| `--token <t>` | um token Turnstile manual | — |
-| `--mailtrap-token <t>` | token da API do Mailtrap | env `MAILTRAP_TOKEN` |
+| `--auto` | resolve o captcha com o `src/solver.js` embutido | ligado (padrão) |
+| `--no-auto` | desliga o solucionador embutido | desligado |
+| `--dry` | imprime o plano resolvido, não grava nada, não envia nada | desligado |
+| `--mailtrap-token <t>` | token da API do Mailtrap | variável de ambiente `MAILTRAP_TOKEN` |
 | `--model <id>` | modelo para verify / connect | `diffusiongemma-26b` |
-| `--conc <n>` | concorrência de verify | `6` |
+| `--conc <n>` | concorrência de verificação | `6` |
 | `--router <url>` | base do 9Router | `http://localhost:20128` |
 | `--router-password <pw>` | senha do painel do 9Router | `123456` |
 
@@ -186,9 +199,9 @@ node src/cli.js token                    # solve one Turnstile token (debug)
 
 A codiv.ai protege o cadastro com Cloudflare Turnstile e envia um link de verificação por e-mail, então a resolução deve acontecer em um navegador real a partir de um IP de saída limpo:
 
-- **Chrome via CDP (padrão)** — inicie seu próprio Chrome com interface gráfica com `--remote-debugging-port=9222` e aponte `--cdp` para ele. A página que contém o widget é criada em seu próprio contexto de navegador.
-- **Saída por proxy** — `--proxy socks5://…` ou `http://…` fixa a saída da *página de resolução*. O Cloudflare modera o widget por IP de saída; uma linha de datacenter passa pelo widget mas responde `fail code 600010` após o clique, então aponte para uma saída residencial e espere que uma dada saída mude em questão de horas sob uso intenso.
-- **Solucionador externo** — `--solver-cmd "node my-solver.js"` ignora o Chrome completamente; ele roda uma vez por tentativa com `CODIV_SITEKEY` e `CODIV_URL` no ambiente, e o token é a última linha não vazia do stdout.
+- **Chrome via CDP (padrão)** — inicie seu próprio Chrome com interface com `--remote-debugging-port=9222` e aponte `--cdp` para ele. A página que contém o widget é criada em seu próprio contexto de navegador.
+- **Saída por proxy** — `--proxy socks5://…` ou `http://…` fixa a saída da *página de resolução*. O Cloudflare modera o widget por IP de saída; uma linha de datacenter passa pelo widget mas responde `fail code 600010` após o clique, então aponte para uma saída residencial e espere que uma determinada saída mude em questão de horas sob uso intenso.
+- **Solucionador externo** — `--solver-cmd "node my-solver.js"` ignora o Chrome por completo; ele é executado uma vez por tentativa com `CODIV_SITEKEY` e `CODIV_URL` no ambiente, e o token é a última linha não vazia do stdout.
 - **Requisição direta** — tudo exceto a resolução é HTTPS simples: a API do Mailtrap, os endpoints do better-auth e `https://api.codiv.ai/v1`.
 
 ## 📄 Arquivos
@@ -238,14 +251,14 @@ Flags: `--router http://localhost:20128`, `--router-password 123456`, `--keys ou
 | | |
 | --- | --- |
 | 🏢 Provedor | **codiv.ai** — [codiv.ai](https://codiv.ai) |
-| 🎁 O que o provedor dá | 100M de tokens de entrada gratuitos por conta — uma conta por chave |
+| 🎁 O que o provedor oferece | 100M de tokens de entrada gratuitos por conta — uma conta por chave |
 | 🔑 O que uma chave te dá | uma chave de API limitada à sua própria conta: os 1 ids de modelo no endpoint abaixo, nos limites do seu plano. A cota fica na **conta**, que é exatamente por isso que esta ferramenta cria uma conta por chave |
 | 🌐 Formato da API | Compatível com OpenAI: `POST https://api.codiv.ai/v1/chat/completions` |
 | 🔒 Seus dados | apenas a codiv.ai e o backend de caixa de entrada que você configurar são contatados; as chaves ficam na sua máquina |
 
 ## 🐞 Problemas
 
-Se a codiv.ai mudar o formato do cadastro, o widget Turnstile ou a ação `createKey`, a ferramenta para nessa etapa e avisa. **[Abra uma issue](../../issues)** com o comando que você executou e a saída exata; PRs são bem-vindos.
+Se a codiv.ai mudar o formato do seu cadastro, o widget Turnstile ou a ação `createKey`, a ferramenta para nessa etapa e avisa. **[Abra uma issue](../../issues)** com o comando que você executou e a saída exata; PRs são bem-vindos.
 
 ## 📄 Licença
 

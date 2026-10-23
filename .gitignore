@@ -22,6 +22,9 @@ npm-debug.log*
 .env
 .env.local
 
+# Launcher state
+launcher.config.json
+
 # Account data
 out/
 codiv-accounts/

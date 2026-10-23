@@ -42,7 +42,7 @@
 | Kota | Hesap başına **100.000.000 ücretsiz giriş token'ı** |
 | Kart gerekli mi | **Hayır** |
 | Kayıt | `POST /api/auth/sign-up/email` (better-auth) üzerinden e-posta + parola, e-posta bağlantısı bir Mailtrap gelen kutusundan doğrulanır |
-| Captcha | Kayıtta Cloudflare **Turnstile** — CDP üzerinden **kendi görünür Chrome'unuzda** çözülür veya hâlihazırda sahip olduğunuz harici bir çözücüyle |
+| Captcha | Kayıt sırasında Cloudflare **Turnstile** — CDP üzerinden **kendi başlı (headful) Chrome'unuzda** çözülür veya hâlihazırda sahip olduğunuz harici bir çözücü tarafından çözülür |
 | Anahtar biçimi | `sk-codiv-…` |
 | Ölçeklenen birim | **bir hesap = bir anahtar** → `--count N` aslında "N ücretsiz hesap" demektir |
 
@@ -66,7 +66,7 @@ node src/cli.js --verify-only     # every key in keys.txt is re-tested with a re
 | --- | --- | --- |
 | `diffusiongemma-26b` | `codiv/diffusiongemma-26b` | ✅ `200` — her üretimin karşı kanıtlandığı model |
 
-Anahtar, kontrol panelinin kendi sunucu eyleminden üretilir ve hesabın 100M ücretsiz giriş token'ı bunun bedelini öder; bu nedenle `diffusiongemma-26b` hem `verify` hem de `connect` için varsayılandır; `--model <id>` başka bir modeli sabitler. Yönlendirici tarafındaki listeyi şu şekilde yenileyin:
+Anahtar, kontrol panelinin kendi sunucu eylemiyle üretilir ve hesabın 100M ücretsiz giriş token'ı bunun bedelini öder; bu nedenle `diffusiongemma-26b` hem `verify` hem de `connect` için varsayılandır; `--model <id>` başka bir tanesini sabitler. Yönlendirici tarafındaki listeyi şununla yenileyin:
 
 ```bash
 curl http://localhost:20128/v1/models -H "Authorization: Bearer sk-<9router key>"
@@ -90,6 +90,17 @@ print(client.chat.completions.create(model="diffusiongemma-26b",
       messages=[{"role": "user", "content": "hi"}]).choices[0].message.content)
 ```
 
+## ⚡ Tek komut
+
+```bash
+node src/cli.js --count N      # mint N accounts + keys — the captcha is solved automatically
+node src/cli.js --dry          # print the resolved plan: writes nothing, sends nothing
+```
+
+`--auto` varsayılandır: gömülü `src/solver.js`, codiv.ai'nin kendi Turnstile widget'ını kontrol ettiğiniz Chrome'da (`--cdp`, ya da `--remote-debugging-port=9222` ile başlatın) bağlar ve token'ı geri verir — tek komut, çalıştırılacak başka bir şey yok. `--no-auto` gömülü çözümü kapatır; gelişmiş kaçış kapıları, hâlihazırda bir çözücüye sahip olan operatörler içindir ve `ADVANCED.md` içinde belgelenmiştir.
+
+> ⚠️ **Şartlar ve hesap riski.** Bir sağlayıcıyı otomatikleştirmek, Hizmet Şartları'nı ihlal edebilir ve hesapların veya IP'lerin yasaklanmasına yol açabilir. Bunu sahip olduğunuz hesaplarda, kendi makinenizden, kendi riskinizle çalıştırırsınız; araç yalnızca sitenin kendi kayıt sayfasını sürer ve ücretli bir kapıyı asla atlatmaz. Büyük bir kampanyadan önce sağlayıcının ToS'unu okuyun.
+
 ## 🛠 Hızlı başlangıç
 
 ```bash
@@ -110,15 +121,15 @@ node src/cli.js verify                  # prove the saved keys with a live chat 
 node src/cli.js connect                 # register the keys into 9Router
 ```
 
-`create`, anahtar dosyasında hâlihazırda bulunan anahtarları sayar ve oradan devam eder; böylece bir kampanya iş kaybetmeden durdurulup yeniden başlatılabilir. Anahtarlar `out/codiv-keys.txt` dosyasına, her satıra bir tane olacak şekilde düşer; her hesabın tam kaydı `out/codiv-accounts/` altına düşer.
+`create`, anahtar dosyasında zaten bulunan anahtarları sayar ve oradan devam eder, böylece bir kampanya iş kaybetmeden durdurulup yeniden başlatılabilir. Anahtarlar `out/codiv-keys.txt` dosyasına, her satırda bir tane olacak şekilde düşer; her hesabın tam kaydı `out/codiv-accounts/` içine düşer.
 
 ### 🖱️ Başlatıcı
 
-`node src/cli.js`, CODIV banner'ını ve görev listesini yazdırır. Görevler `mint` (isteğe bağlı tek hesap), `create` (kampanya), `verify`, `connect`, `list` ve `token` (hata ayıklama için tek bir Turnstile token'ı çöz). Bayraklar `--name value` biçiminde okunur, yani hiçbir şey bir yapılandırma dosyasının arkasına saklanmaz.
+`node src/cli.js`, CODIV banner'ını ve görev listesini yazdırır. Görevler `mint` (isteğe bağlı tek hesap), `create` (kampanya), `verify`, `connect`, `list` ve `token` (hata ayıklama için tek bir Turnstile token'ı çöz). Bayraklar `--name value` biçiminde okunur, yani hiçbir şey bir yapılandırma dosyasının arkasına gizlenmez.
 
 ## ✅ Çalıştığı doğrulandı — her anahtar test edilir
 
-> **Kalite kapıları.** Buradaki her anahtar `keys.txt` dosyasına yazılmadan önce canlı bir `chat-200` geçti
+> **Kalite kapıları.** Buradaki her anahtar, `keys.txt` dosyasına yazılmadan önce canlı bir `chat-200` geçti
 > (ölü anahtarlar asla gönderilmez). Yönlendirici kombinasyonları model düzeyinde aynı kuralı izler: bir giriş
 > **yalnızca model `chat-200` yanıtlıyorsa ve araçları çağırabiliyorsa** eklenir — araç desteği olmayan bir model,
 > ölü bir anahtar veya ölü bir sağlayıcı eklenmek yerine çıkarılır. **9Router ve OmniRoute** ile çalışır.
@@ -126,10 +137,10 @@ node src/cli.js connect                 # register the keys into 9Router
 | Kontrol | Sonuç |
 | --- | --- |
 | hesap oluşturma | taze bir Mailtrap gelen kutusunda `POST /api/auth/sign-up/email` (better-auth) |
-| e-posta doğrulama | doğrulama bağlantısı gelen kutusundan çekilir; better-auth doğrulama isabetinde otomatik oturum açar, yani onun `Set-Cookie`'si oturumdur |
-| anahtar oluşturma | kontrol panelinin Next.js sunucu eylemi `createKey` (kimlikler her çalıştırmada dağıtılan chunk'lardan yeniden keşfedilir, çünkü yeniden dağıtımlar onları döndürür) taze anahtarı RSC yanıtında döndürür |
-| canlı kanıt | `POST https://api.codiv.ai/v1/chat/completions` (`diffusiongemma-26b`) anahtar sayılmadan önce `200` yanıtlamalıdır |
-| sohbet kontrolünü geçemeyen bir anahtar | asla yazılmaz — hesap kendi slot JSON'unda kurtarılabilir kalır |
+| e-posta doğrulama | doğrulama bağlantısı gelen kutusundan çekilir; better-auth doğrulama isabetinde otomatik oturum açar, yani `Set-Cookie`'si oturumdur |
+| anahtar oluşturma | kontrol panelinin Next.js sunucu eylemi `createKey` (id'ler her çalıştırmada dağıtılan chunk'lardan yeniden keşfedilir, çünkü yeniden dağıtımlar bunları döndürür) taze anahtarı RSC yanıtında döndürür |
+| canlı kanıt | `POST https://api.codiv.ai/v1/chat/completions` (`diffusiongemma-26b`), anahtar sayılmadan önce `200` yanıtlamalıdır |
+| sohbet kontrolünde başarısız olan bir anahtar | asla yazılmaz — hesap, kendi slot JSON'unda kurtarılabilir kalır |
 
 Gerçek kampanyalarda ölçüldü: bir hesap = **100M ücretsiz giriş token'ı**; bir üretim ≈ **80-115 sn** (bir Turnstile çözümü + bir doğrulama postası) ve Turnstile token'ları çözüm çıkışına sabitlenir, bu nedenle reddedilen bir token yepyeni bir çözümle yeniden denenir (4 denemeye kadar).
 
@@ -167,27 +178,29 @@ node src/cli.js token                    # solve one Turnstile token (debug)
 | Bayrak | Anlamı | Varsayılan |
 | --- | --- | --- |
 | `--count <n>` | kampanya boyutu | `200` |
-| `--dir <name>` | `out/` altında çalışan başına hesaplar dizini | `codiv-accounts` |
+| `--dir <name>` | `out/` altında işçi başına hesaplar dizini | `codiv-accounts` |
 | `--keys <file>` | anahtar dosyası | `out/codiv-keys.txt` |
 | `--pause <ms>` | üretimler arası gecikme | `5000` |
 | `--cdp <url>` | Chrome DevTools uç noktası | `http://127.0.0.1:9222` |
 | `--proxy <url>` | çözüm sayfası çıkışı (`socks5://` / `http://`) | doğrudan |
 | `--solver-cmd <cmd>` | harici Turnstile çözücü | — |
-| `--token <t>` | bir manuel Turnstile token'ı | — |
+| `--auto` | captcha'yı gömülü `src/solver.js` ile çöz | açık (varsayılan) |
+| `--no-auto` | gömülü çözücüyü devre dışı bırak | kapalı |
+| `--dry` | çözümlenen planı yazdır, hiçbir şey yazma, hiçbir şey gönderme | kapalı |
 | `--mailtrap-token <t>` | Mailtrap API token'ı | `MAILTRAP_TOKEN` ortam değişkeni |
 | `--model <id>` | verify / connect için model | `diffusiongemma-26b` |
 | `--conc <n>` | verify eşzamanlılığı | `6` |
 | `--router <url>` | 9Router temeli | `http://localhost:20128` |
 | `--router-password <pw>` | 9Router kontrol paneli parolası | `123456` |
 
-**Paralel kampanyalar:** her çalışana kendi `--dir` ve `--keys` değerini verin; tek bir dizini paylaşan iki çalışan aynı slota yazar ve her çakışmada bir kaydı kaybeder (ölçüldü).
+**Paralel kampanyalar:** her işçiye kendi `--dir` ve `--keys` değerini verin; tek bir dizini paylaşan iki işçi aynı slota yazar ve her çakışmada bir kayıt kaybeder (ölçüldü).
 
 ## 🛰️ Proxy arkasında
 
-codiv.ai kaydı Cloudflare Turnstile ile korur ve bir doğrulama bağlantısı postaladığından, çözümün temiz bir çıkış IP'sinden gerçek bir tarayıcıda gerçekleşmesi gerekir:
+codiv.ai, kaydı Cloudflare Turnstile ile korur ve bir doğrulama bağlantısı postalar, bu nedenle çözümün temiz bir çıkış IP'sinden gerçek bir tarayıcıda gerçekleşmesi gerekir:
 
-- **CDP üzerinden Chrome (varsayılan)** — kendi görünür Chrome'unuzu `--remote-debugging-port=9222` ile başlatın ve `--cdp` değerini ona yönlendirin. Widget'ı taşıyan sayfa kendi tarayıcı bağlamında oluşturulur.
-- **Proxy çıkışı** — `--proxy socks5://…` veya `http://…` *çözüm sayfasının* çıkışını sabitler. Cloudflare widget'ı çıkış IP'sine göre değerlendirir; bir veri merkezi hattı widget'ı geçer ancak tıklamadan sonra `fail code 600010` yanıtlar, bu nedenle onu konut tipi bir çıkışa yönlendirin ve yoğun kullanım altında belirli bir çıkışın saatler içinde ters dönmesini bekleyin.
+- **CDP üzerinden Chrome (varsayılan)** — kendi başlı Chrome'unuzu `--remote-debugging-port=9222` ile başlatın ve `--cdp` ile ona işaret edin. Widget'ı taşıyan sayfa kendi tarayıcı bağlamında oluşturulur.
+- **Proxy çıkışı** — `--proxy socks5://…` veya `http://…`, *çözüm sayfasının* çıkışını sabitler. Cloudflare widget'ı çıkış IP'si başına denetler; bir veri merkezi hattı widget'ı geçer ancak tıklamadan sonra `fail code 600010` yanıtlar, bu nedenle onu konut benzeri bir çıkışa yönlendirin ve yoğun kullanım altında belirli bir çıkışın saatler içinde ters dönmesini bekleyin.
 - **Harici çözücü** — `--solver-cmd "node my-solver.js"` Chrome'u tamamen atlar; her denemede ortamda `CODIV_SITEKEY` ve `CODIV_URL` ile bir kez çalışır ve token son boş olmayan stdout satırıdır.
 - **Doğrudan getirme** — çözüm dışındaki her şey düz HTTPS'tir: Mailtrap'in API'si, better-auth uç noktaları ve `https://api.codiv.ai/v1`.
 
@@ -204,7 +217,7 @@ codiv.ai kaydı Cloudflare Turnstile ile korur ve bir doğrulama bağlantısı p
 
 ## 🔌 9Router'a bağlanma
 
-[9Router](https://9router.com), kendi sunucunuzda barındırılan, OpenAI uyumlu bir yönlendiricidir (`npm install -g 9router && 9router`, kontrol paneli `http://localhost:20128` adresinde). Her anahtarı tek geçişte kaydedin:
+[9Router](https://9router.com), kendi kendine barındırılan, OpenAI uyumlu bir yönlendiricidir (`npm install -g 9router && 9router`, kontrol paneli `http://localhost:20128` adresinde). Her anahtarı tek geçişte kaydedin:
 
 ```bash
 node src/cli.js connect --keys out/codiv-keys.txt
@@ -220,7 +233,7 @@ Bayraklar: `--router http://localhost:20128`, `--router-password 123456`, `--key
 
 ## 🔌 OmniRoute'a bağlanma
 
-[OmniRoute](https://omniroute.online), kendi sunucunuzda barındırılan, OpenAI uyumlu bir yönlendiricidir (`npm install -g omniroute && omniroute`, kontrol paneli `http://localhost:20128` adresinde). Her anahtarı tek geçişte kaydedin:
+[OmniRoute](https://omniroute.online), kendi kendine barındırılan, OpenAI uyumlu bir yönlendiricidir (`npm install -g omniroute && omniroute`, kontrol paneli `http://localhost:20128` adresinde). Her anahtarı tek geçişte kaydedin:
 
 ```bash
 node src/cli.js connect --keys out/codiv-keys.txt
@@ -239,9 +252,9 @@ Bayraklar: `--router http://localhost:20128`, `--router-password 123456`, `--key
 | --- | --- |
 | 🏢 Sağlayıcı | **codiv.ai** — [codiv.ai](https://codiv.ai) |
 | 🎁 Sağlayıcının verdikleri | Hesap başına 100M ücretsiz giriş token'ı — anahtar başına bir hesap |
-| 🔑 Bir anahtarın size kazandırdıkları | kendi hesabına kapsanmış bir API anahtarı: aşağıdaki uç noktadaki 1 model kimliği, planınızın sınırlarında. Kota **hesapta** yaşar, bu aracın anahtar başına bir hesap oluşturmasının nedeni tam olarak budur |
+| 🔑 Bir anahtarın size kazandırdıkları | kendi hesabına kapsanmış bir API anahtarı: aşağıdaki uç noktada 1 model kimliği, planınızın sınırlarında. Kota **hesapta** yaşar, bu aracın anahtar başına bir hesap oluşturmasının nedeni tam da budur |
 | 🌐 API biçimi | OpenAI uyumlu: `POST https://api.codiv.ai/v1/chat/completions` |
-| 🔒 Verileriniz | yalnızca codiv.ai ve yapılandırdığınız gelen kutusu arka ucuyla iletişim kurulur; anahtarlar makinenizde kalır |
+| 🔒 Verileriniz | yalnızca codiv.ai ve yapılandırdığınız gelen kutusu arka ucuna bağlanılır; anahtarlar makinenizde kalır |
 
 ## 🐞 Sorunlar
 

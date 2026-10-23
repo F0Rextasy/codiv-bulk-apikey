@@ -30,7 +30,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 const { createInbox, listMessages, readMessage } = require('./mailtrap');
-const { solveTurnstile, DEFAULT_CDP, DEFAULT_SITEKEY } = require('./solver');
+const { solveCaptcha, DEFAULT_CDP, DEFAULT_SITEKEY } = require('../solver');
 
 const SITE = 'https://codiv.ai';
 const API = 'https://api.codiv.ai';
@@ -72,15 +72,25 @@ function tokenFromSolverCmd(cmd, { url, sitekey, log }) {
 
 /**
  * One Turnstile token for `url`: a manual `--token` (first attempt only), an
- * external `--solver-cmd`, or the built-in CDP mount solver.
+ * external `--solver-cmd`, or the embedded solver (`--auto`, the default).
+ * `--no-auto` without either escape hatch fails fast instead of pretending.
  */
-async function getToken({ manualToken, usedManual, solverCmd, cdpUrl, proxy, url, sitekey, log }) {
+async function getToken({ manualToken, usedManual, solverCmd, cdpUrl, proxy, url, sitekey, auto, log }) {
   if (manualToken && !usedManual.value) {
     usedManual.value = true;
     return manualToken;
   }
   if (solverCmd) return tokenFromSolverCmd(solverCmd, { url, sitekey, log });
-  return solveTurnstile({ cdpUrl, url, sitekey, proxy, attempts: 1, log });
+  if (!auto) throw new Error('--no-auto: no Turnstile source — the embedded solver is off, pass --solver-cmd "<cmd>" or set one through the environment');
+  try {
+    // ONE mount per call on purpose: the caller retries with a fresh token, and
+    // that retry is what rescues a token Cloudflare rejects (measured).
+    const { token } = await solveCaptcha({ type: 'turnstile', sitekey, url, proxy, cdpUrl, attempts: 1, log });
+    return token;
+  } catch (e) {
+    log(`  solver: ${e.message}`);
+    return null;
+  }
 }
 
 /** better-auth call with `x-captcha-response`; retries with a NEW token when
@@ -176,8 +186,8 @@ async function mintAccount({
   out,
   token: manualToken = null,
   solverCmd = null,
-  cdpUrl = DEFAULT_CDP,
   proxy = null,
+  auto = true,
   sitekey = DEFAULT_SITEKEY,
   mailtrapToken = null,
   inboxFolder = 'codiv',
@@ -185,7 +195,7 @@ async function mintAccount({
   log = (m) => console.log(m),
 } = {}) {
   const record = { provider: 'codiv.ai', at: new Date().toISOString(), steps: {} };
-  const ctx = { manualToken, usedManual: { value: false }, solverCmd, cdpUrl, proxy, sitekey, log };
+  const ctx = { manualToken, usedManual: { value: false }, solverCmd, cdpUrl, proxy, sitekey, auto, log };
 
   const box = await createInbox({ token: mailtrapToken, folder: inboxFolder, tag: 'codiv' });
   record.steps.maildrop = { address: box.address };

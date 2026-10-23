@@ -1,6 +1,8 @@
 'use strict';
 
 /**
+ * src/solver.js — the repo's captcha engine and the `--auto` entry.
+ *
  * Turnstile solver — mounts codiv.ai's own widget on the page and hands back
  * `turnstile.getResponse()`.
  *
@@ -16,9 +18,16 @@
  *
  * Chrome moderates the widget per exit IP, so a datacenter line can answer
  * `fail code 400020`; a residential exit is what the lane was measured on.
+ *
+ * Locked one-command entry:
+ *   const { solveCaptcha } = require('./solver.js');
+ *   const { token, ms } = await solveCaptcha({ type, sitekey, url, proxy });
  */
 
-const { CDP } = require('./cdp');
+const { CDP } = require('./lib/cdp');
+
+/** The one page-global namespace this module owns. */
+const NS = '__codiv';
 
 const API_SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 const DEFAULT_SITEKEY = '0x4AAAAAAE7hE0DIArlj6rXX';
@@ -83,16 +92,16 @@ async function closePage(cdp, page) {
  *  parent via postMessage; the iframe is cross-origin, so this is the only way to
  *  *measure* why a mount produced no token. */
 const INSTALL_LISTENER = `(() => {
-  window.__codivTsErrors = window.__codivTsErrors || [];
-  if (!window.__codivTsListener) {
-    window.__codivTsListener = true;
+  window.${NS}TsErrors = window.${NS}TsErrors || [];
+  if (!window.${NS}TsListener) {
+    window.${NS}TsListener = true;
     window.addEventListener('message', (e) => {
       try {
         const d = typeof e.data === 'string' ? e.data : JSON.stringify(e.data);
         // Only failure codes (300xxx/600xxx) — every benign message carries the
         // string "cloudflare-challenge" in its source field, so matching words
         // would fill this list with noise.
-        if (d && /3\\d{5}|6\\d{5}/.test(d)) window.__codivTsErrors.push(String(d).slice(0, 200));
+        if (d && /3\\d{5}|6\\d{5}/.test(d)) window.${NS}TsErrors.push(String(d).slice(0, 200));
       } catch (err) {}
     });
   }
@@ -100,7 +109,7 @@ const INSTALL_LISTENER = `(() => {
 })()`;
 
 const INJECT_API = `(() => {
-  window.__codivMount = null;
+  window.${NS}Mount = null;
   if (typeof turnstile === 'undefined' && !document.getElementById('codiv-captcha-api')) {
     const s = document.createElement('script');
     s.id = 'codiv-captcha-api';
@@ -121,21 +130,21 @@ function renderWidget(sitekey) {
       host.id = 'codiv-mount-host';
       host.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:2147483647;background:#fff;padding:4px';
       document.body.appendChild(host);
-      if (window.__codivMountId != null) { try { turnstile.remove(window.__codivMountId); } catch (e) {} }
-      window.__codivMountId = turnstile.render(host, {
+      if (window.${NS}MountId != null) { try { turnstile.remove(window.${NS}MountId); } catch (e) {} }
+      window.${NS}MountId = turnstile.render(host, {
         sitekey: ${JSON.stringify(sitekey)},
         size: 'normal',
-        callback: (tk) => { window.__codivMount = tk; },
+        callback: (tk) => { window.${NS}Mount = tk; },
       });
-      return { ok: true, widgetId: String(window.__codivMountId) };
+      return { ok: true, widgetId: String(window.${NS}MountId) };
     } catch (e) { return { ok: false, why: String((e && e.message) || e) }; }
   })()`;
 }
 
 const READ_TOKEN = `(() => {
   try {
-    const own = window.__codivMount ||
-      (window.__codivMountId != null && typeof turnstile !== 'undefined' && turnstile.getResponse ? turnstile.getResponse(window.__codivMountId) : '');
+    const own = window.${NS}Mount ||
+      (window.${NS}MountId != null && typeof turnstile !== 'undefined' && turnstile.getResponse ? turnstile.getResponse(window.${NS}MountId) : '');
     if (own && String(own).length > 20) return own;
     const input = document.querySelector('[name="cf-turnstile-response"]');
     return input ? (input.value || '') : '';
@@ -144,8 +153,8 @@ const READ_TOKEN = `(() => {
 
 const RESET_WIDGET = `(() => {
   try {
-    window.__codivMount = null;
-    if (window.__codivMountId != null && typeof turnstile !== 'undefined') turnstile.reset(window.__codivMountId);
+    window.${NS}Mount = null;
+    if (window.${NS}MountId != null && typeof turnstile !== 'undefined') turnstile.reset(window.${NS}MountId);
     return true;
   } catch (e) { return false; }
 })()`;
@@ -238,7 +247,7 @@ async function solveOnPage(cdp, { url, sitekey, proxy, log, clickRounds = 6, bud
       const clicked = await clickCheckbox(cdp, sid);
       token = await pollToken(cdp, sid, 12, 700);
       if (!token && !clicked) break;
-      seenErr = await evalIn(cdp, sid, `(() => (window.__codivTsErrors || []).slice(-2))()`).catch(() => []);
+      seenErr = await evalIn(cdp, sid, `(() => (window.${NS}TsErrors || []).slice(-2))()`).catch(() => []);
       log(`  solver: click ${tries} tokenLen=${(token || '').length}${seenErr.length ? ` tsErrors=${JSON.stringify(seenErr).slice(0, 200)}` : ''}`);
     }
     return token && token.length > 20 ? token : '';
@@ -279,4 +288,28 @@ async function solveTurnstile({ cdpUrl = DEFAULT_CDP, url = 'https://codiv.ai/si
   }
 }
 
-module.exports = { solveTurnstile, browserWs, DEFAULT_CDP, DEFAULT_SITEKEY };
+/**
+ * One-command entry (`--auto`), following the shared solver contract:
+ *
+ *   const { token, ms } = await solveCaptcha({ type, sitekey, url, proxy, cdata, action });
+ *
+ * `proxy` is the account's pinned exit as a string ('socks5://host:port' or
+ * 'http://user:pass@host:port') or null for DIRECT. `cdata`/`action` are
+ * Turnstile render parameters for panels that ask for them; codiv's widget is
+ * rendered with the sitekey alone, so they are accepted and unused. Resolves
+ * with the untrimmed token, or throws — never a silent empty string.
+ */
+async function solveCaptcha({ type = 'turnstile', sitekey = DEFAULT_SITEKEY, url = 'https://codiv.ai/signup', proxy = null, cdata = null, action = null, cdpUrl = DEFAULT_CDP, attempts = 2, log = () => {} } = {}) {
+  if (type !== 'turnstile') throw new Error(`solveCaptcha: unsupported captcha type "${type}" (codiv.ai is Turnstile only)`);
+  const t0 = Date.now();
+  const token = await solveTurnstile({ cdpUrl, url, sitekey, proxy, attempts, log });
+  if (!token) {
+    throw new Error(
+      `solveCaptcha: no Turnstile token after ${attempts} mount(s) — start your own Chrome with --remote-debugging-port=9222 ` +
+        `(or point --cdp at a running one) and, if the widget answers "fail", retry from another exit`,
+    );
+  }
+  return { token, ms: Date.now() - t0 };
+}
+
+module.exports = { solveCaptcha, solveTurnstile, browserWs, DEFAULT_CDP, DEFAULT_SITEKEY, NS };

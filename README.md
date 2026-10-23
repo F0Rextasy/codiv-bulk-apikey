@@ -90,6 +90,17 @@ print(client.chat.completions.create(model="diffusiongemma-26b",
       messages=[{"role": "user", "content": "hi"}]).choices[0].message.content)
 ```
 
+## ⚡ One command
+
+```bash
+node src/cli.js --count N      # mint N accounts + keys — the captcha is solved automatically
+node src/cli.js --dry          # print the resolved plan: writes nothing, sends nothing
+```
+
+`--auto` is the default: the embedded `src/solver.js` mounts codiv.ai's own Turnstile widget in the Chrome you control (`--cdp`, or start it with `--remote-debugging-port=9222`) and hands the token back — one command, nothing else to run. `--no-auto` turns the embedded solve off; the advanced escape hatches are for operators who already own a solver and are documented in `ADVANCED.md`.
+
+> ⚠️ **Terms & account risk.** Automating a provider can violate its Terms of Service and get accounts or IPs banned. You run this on accounts you own, from your own machine, at your own risk; the tool only drives the site's own sign-up page and never bypasses a paid gate. Read the provider's ToS before a large campaign.
+
 ## 🛠 Quick start
 
 ```bash
@@ -113,7 +124,7 @@ node src/cli.js connect                 # register the keys into 9Router
 
 ### 🖱️ The launcher
 
-`node src/cli.js` prints the CODIV banner and the task list. The tasks are `mint` (one account, on demand), `create` (campaign), `verify`, `connect`, `list` and `token` (solve a single Turnstile token for debugging). Flags are read with `--name value`, so nothing is hidden behind a config file.
+`npm start` (or `node src/launcher.js`) opens the menu; item **1) Mint keys** asks one question — how many keys — and runs the campaign with the captcha solved automatically (`--auto`). No token, captcha or proxy question: `proxies.txt` next to the CLI is used automatically when it exists, otherwise the tool goes direct. `node src/cli.js` prints the CODIV banner and the task list behind it — `mint` (one account, on demand), `create` (campaign), `verify`, `connect`, `list` and `token` (solve a single Turnstile token for debugging). Flags are read with `--name value`, so nothing is hidden behind a config file.
 
 ## ✅ Verified working — every key is tested
 
@@ -172,7 +183,9 @@ node src/cli.js token                    # solve one Turnstile token (debug)
 | `--cdp <url>` | Chrome DevTools endpoint | `http://127.0.0.1:9222` |
 | `--proxy <url>` | solve-page exit (`socks5://` / `http://`) | direct |
 | `--solver-cmd <cmd>` | external Turnstile solver | — |
-| `--token <t>` | one manual Turnstile token | — |
+| `--auto` | solve the captcha with the embedded `src/solver.js` | on (default) |
+| `--no-auto` | disable the embedded solver | off |
+| `--dry` | print the resolved plan, write nothing, send nothing | off |
 | `--mailtrap-token <t>` | Mailtrap API token | `MAILTRAP_TOKEN` env |
 | `--model <id>` | model for verify / connect | `diffusiongemma-26b` |
 | `--conc <n>` | verify concurrency | `6` |
