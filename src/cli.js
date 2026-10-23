@@ -190,13 +190,15 @@ async function cmdVerify() {
     }));
     for (const r of results) {
       if (r.ok) { ok++; console.log(`OK   ${mask(r.key)} ${r.ms}ms`); }
-      else { fail++; dead.push(r.key); console.log(`FAIL ${mask(r.key)} (${r.status}${r.error ? ` ${r.error.slice(0, 60)}` : ''}) ${r.ms}ms`); }
+      else { fail++; dead.push({ key: r.key, status: r.status }); console.log(`FAIL ${mask(r.key)} (${r.status}${r.error ? ` ${r.error.slice(0, 60)}` : ''}) ${r.ms}ms`); }
     }
     if (i + conc < keys.length) await sleep(500);
   }
   if (dead.length) {
-    fs.appendFileSync(path.join(OUT_DIR, 'codiv-keys-dead.txt'), dead.map((k) => `${k}\n`).join(''));
-    console.log(`\n${dead.length} dead key(s) written to out/codiv-keys-dead.txt`);
+    // keys-dead.txt lives NEXT TO the keys file (standard: key<TAB>sebep<TAB>ISO).
+    const deadFile = path.join(path.dirname(path.resolve(keysFile)), 'keys-dead.txt');
+    fs.appendFileSync(deadFile, dead.map((d) => `${d.key}\t${d.status}\t${new Date().toISOString()}`).join('\n') + '\n');
+    console.log(`\n${dead.length} dead key(s) written to ${path.relative(process.cwd(), deadFile)}`);
   }
   console.log(`\nResults: ${ok} OK, ${fail} failed`);
 }

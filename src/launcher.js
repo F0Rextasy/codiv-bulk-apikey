@@ -56,7 +56,7 @@ const readline = require('readline');
 const ROOT = path.resolve(__dirname, '..');
 const CLI = path.join(__dirname, 'cli.js');
 const KEYS_FILE = path.join(ROOT, 'out', 'codiv-keys.txt');
-const DEAD_FILE = path.join(ROOT, 'out', 'codiv-keys-dead.txt');
+const DEAD_FILE = path.join(path.dirname(KEYS_FILE), 'keys-dead.txt');
 const CONFIG = path.join(ROOT, 'launcher.config.json');
 const ROUTERS = [
   { flag: '--connect-9router', file: 'connect-9router.js', label: 'Connect to 9Router' },

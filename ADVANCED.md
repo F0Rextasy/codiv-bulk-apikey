@@ -44,7 +44,7 @@ at the first solve with a clear message instead of pretending.
 | Path | Contents |
 | --- | --- |
 | `out/codiv-keys.txt` | one live-verified key per line |
-| `out/codiv-keys-dead.txt` | keys `verify` found dead (written by the verify path) |
+| `out/keys-dead.txt` | keys `verify` found dead — `key<TAB>sebep<TAB>ISO`, written NEXT TO the keys file (by the verify path) |
 | `out/codiv-accounts/<slot>.json` | the full per-account record |
 | `out/codiv-batch.log` | campaign log |
 
