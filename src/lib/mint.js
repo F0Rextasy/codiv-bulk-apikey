@@ -267,7 +267,7 @@ async function mintAccount({
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, JSON.stringify({ ...record, account: { email: box.address, password }, key: { name: 'Default', value: key } }, null, 2));
   log(`saved       -> ${out} (key masked in log, full in file)`);
-  return record;
+  return { ...record, account: { email: box.address, password }, key: { name: 'Default', value: key } };
 }
 
 module.exports = { mintAccount };
